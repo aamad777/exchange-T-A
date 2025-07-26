@@ -1,0 +1,18 @@
+---
+- name: Join EX01 to socar.local Domain
+  hosts: ex01
+  tasks:
+    - name: Join EX01 to domain
+      win_domain_membership:
+        dns_domain_name: "dad-ai.local"
+        hostname: "EX01"
+        domain_admin_user: "dad.ai\\admin777"
+        domain_admin_password: "NEW@socar777"
+        state: domain
+      register: domain_join
+
+    - name: Reboot after joining domain
+      win_reboot:
+        msg: "Rebooting after domain join"
+        pre_reboot_delay: 15
+      when: domain_join.reboot_required

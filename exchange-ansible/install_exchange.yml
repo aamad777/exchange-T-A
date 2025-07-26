@@ -1,0 +1,69 @@
+---
+- name: Prepare EX01 for Exchange 2019 Installation
+  hosts: ex01
+  tasks:
+
+    # ✅ Ensure Temp directory exists
+    - name: Ensure Temp directory exists
+      win_file:
+        path: C:\Temp
+        state: directory
+
+    # ✅ Install required Windows Features including UCMA prerequisites
+    - name: Install required Windows Features for Exchange + UCMA prerequisites
+      win_feature:
+        name:
+          - NET-Framework-45-Features
+          - RSAT-ADDS
+          - Web-Server
+          - Web-Basic-Auth
+          - Web-Windows-Auth
+          - Web-Mgmt-Console
+          - WAS-Process-Model
+          - RSAT-Clustering
+          - RSAT-Clustering-Mgmt
+          - RSAT-Clustering-PowerShell
+          - RSAT-AD-PowerShell
+          - Server-Media-Foundation
+        state: present
+        include_management_tools: true
+
+    # ✅ Download Exchange 2019 ISO (replace with your preferred link if needed)
+    - name: Download Exchange 2019 ISO
+      win_get_url:
+        url: https://download.microsoft.com/download/b/f/7/bf7700c9-c2fd-40be-82cc-7c5330b5f981/ExchangeServer2019-x64-CU14.ISO
+        dest: C:\Temp\Exchange2019.iso
+
+    # ✅ Mount Exchange 2019 ISO
+    - name: Mount Exchange 2019 ISO
+      win_shell: |
+        Mount-DiskImage -ImagePath "C:\Temp\Exchange2019.iso"
+      args:
+        executable: powershell.exe
+
+    # ✅ Get mounted Exchange 2019 drive letter (corrected)
+    - name: Get mounted Exchange 2019 drive letter
+      win_shell: |
+        (Get-DiskImage -ImagePath "C:\Temp\Exchange2019.iso" | Get-Volume).DriveLetter
+      register: exchange_drive
+      args:
+        executable: powershell.exe
+
+    # ✅ Install Exchange 2019 silently
+    - name: Install Exchange 2019 silently
+      win_shell: |
+        $drive = "{{ exchange_drive.stdout.strip() }}:"
+        Start-Process -FilePath "$drive\Setup.exe" `
+        -ArgumentList "/Mode:Install /Roles:Mailbox /IAcceptExchangeServerLicenseTerms_DiagnosticDataOFF /DisableAMFiltering /InstallWindowsComponents" `
+        -Wait -NoNewWindow
+      args:
+        executable: powershell.exe
+      async: 7200
+      poll: 60
+
+    # ✅ Dismount Exchange ISO after installation
+    - name: Dismount Exchange 2019 ISO
+      win_shell: |
+        Dismount-DiskImage -ImagePath "C:\Temp\Exchange2019.iso"
+      args:
+        executable: powershell.exe

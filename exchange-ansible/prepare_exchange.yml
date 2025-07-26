@@ -1,0 +1,52 @@
+---
+- name: Prepare EX01 for Exchange 2019 Installation
+  hosts: ex01
+  tasks:
+    - name: Ensure Temp directory exists
+      win_file:
+        path: C:\Temp
+        state: directory
+
+    - name: Install required Windows Features for Exchange + UCMA prerequisites
+      win_feature:
+        name:
+          - NET-Framework-Features
+          - RSAT-ADDS
+          - Web-Server
+          - Web-Basic-Auth
+          - Web-Windows-Auth
+          - Web-Mgmt-Console
+          - WAS-Process-Model
+          - RSAT-Clustering
+          - RSAT-Clustering-Mgmt
+          - RSAT-Clustering-PowerShell
+          - RSAT-AD-PowerShell
+          - Server-Media-Foundation        # ✅ Required for UCMA 6.0
+        state: present
+        include_management_tools: true
+
+    - name: Download UCMA (Unified Communications Managed API 4.0)
+      win_get_url:
+        url: https://download.microsoft.com/download/3/b/d/3bd4bfe3-244c-4cf0-b174-3ba0f1953709/UcmaRuntimeSetup.exe
+        dest: C:\Temp\UcmaRuntimeSetup.exe
+
+    - name: Verify UCMA file exists
+      win_stat:
+        path: C:\Temp\UcmaRuntimeSetup.exe
+      register: ucma_file
+
+    - name: Fail if UCMA file is missing
+      fail:
+        msg: "UCMA installer did not download correctly!"
+      when: not ucma_file.stat.exists
+
+    - name: Install UCMA (Async to avoid WinRM timeout)
+      win_shell: |
+        Start-Process -FilePath "C:\Temp\UcmaRuntimeSetup.exe" -ArgumentList "/quiet" -Wait
+      async: 3600
+      poll: 30
+
+    - name: Reboot after UCMA installation (if required)
+      win_reboot:
+        msg: "Rebooting after UCMA installation"
+        pre_reboot_delay: 10

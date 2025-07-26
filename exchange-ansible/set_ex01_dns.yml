@@ -1,0 +1,9 @@
+---
+- name: Set EX01 DNS to point to DC01
+  hosts: ex01
+  tasks:
+    - name: Configure primary DNS to DC01 private IP
+      win_dns_client:
+        adapter_names: "*"
+        ipv4_addresses:
+          - 10.0.0.4

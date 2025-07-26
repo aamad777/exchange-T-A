@@ -1,0 +1,20 @@
+---
+- name: Promote DC01 to Domain Controller
+  hosts: dc01
+  tasks:
+    - name: Install AD Domain Services
+      win_feature:
+        name: AD-Domain-Services
+        state: present
+
+    - name: Promote server to Domain Controller
+      win_domain:
+        dns_domain_name: "dad-ai.local"
+        safe_mode_password: "NEW@socar777"
+      register: domain_result
+
+    - name: Reboot after promotion
+      win_reboot:
+        msg: "Rebooting after Domain Controller promotion"
+        pre_reboot_delay: 15
+      when: domain_result.reboot_required

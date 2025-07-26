@@ -1,18 +1,16 @@
 all:
   hosts:
     dc01:
-      ansible_host: 52.170.131.18
+      ansible_host: 40.121.193.128
       ansible_user: admin777
-      ansible_password: "NEW@socar777"
+      ansible_password: NEW@socar777
       ansible_connection: winrm
       ansible_winrm_transport: ntlm
       ansible_port: 5985
-
     ex01:
-      ansible_host: 40.114.1.15
+      ansible_host: 40.71.199.164
       ansible_user: admin777
-      ansible_password: "NEW@socar777"
+      ansible_password: NEW@socar777
       ansible_connection: winrm
       ansible_winrm_transport: ntlm
       ansible_port: 5985
-
